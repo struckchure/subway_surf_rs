@@ -75,9 +75,9 @@ jobs:
         run: |
           mkdir -p artifacts
           cp target/${{ matrix.target }}/release/${{ matrix.binary_name }} artifacts/
-          cp -r assets artifacts/ || true
-          cp LICENSE artifacts/ || true
-          cp README.md artifacts/ || true
+          if [ -d "assets" ]; then cp -r assets artifacts/; fi
+          if [ -f "LICENSE" ]; then cp LICENSE artifacts/; fi
+          if [ -f "README.md" ]; then cp README.md artifacts/; fi
 
       - name: Prepare artifacts (Windows)
         if: matrix.os == 'windows-latest'
