@@ -2,8 +2,8 @@ name: Build and Release
 
 on:
   push:
-    branches:
-      - main
+    tags:
+      - 'v*'
 
 env:
   CARGO_TERM_COLOR: always
@@ -11,8 +11,8 @@ env:
 jobs:
   build:
     permissions:
-      contents: read
-    
+      contents: write
+
     strategy:
       matrix:
         include:
@@ -81,6 +81,9 @@ jobs:
           if [ -d "assets" ]; then cp -r assets artifacts/; fi
           if [ -f "LICENSE" ]; then cp LICENSE artifacts/; fi
           if [ -f "README.md" ]; then cp README.md artifacts/; fi
+          cd artifacts
+          tar -czf ../${{ matrix.artifact_name }}.tar.gz *
+          cd ..
 
       - name: Prepare artifacts (Windows)
         if: matrix.os == 'windows-latest'
@@ -90,10 +93,86 @@ jobs:
           if exist assets xcopy /E /I assets artifacts\assets
           if exist LICENSE copy LICENSE artifacts\
           if exist README.md copy README.md artifacts\
+          cd artifacts
+          tar -czf ..\${{ matrix.artifact_name }}.tar.gz *
+          cd ..
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.artifact_name }}
-          path: artifacts/
+          path: ${{ matrix.artifact_name }}.tar.gz
           if-no-files-found: error
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Display structure of downloaded files
+        run: ls -R artifacts
+
+      - name: Prepare release assets
+        run: |
+          mkdir -p release-assets
+          find artifacts -name "*.tar.gz" -exec cp {} release-assets/ \;
+          ls -lh release-assets
+
+      - name: Extract version from tag
+        id: version
+        run: echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+
+      - name: Generate release notes
+        id: release_notes
+        run: |
+          if [ -f "CHANGELOG.md" ]; then
+            echo "NOTES<<EOF" >> $GITHUB_OUTPUT
+            echo "## What's Changed" >> $GITHUB_OUTPUT
+            echo "" >> $GITHUB_OUTPUT
+            echo "See [CHANGELOG.md](CHANGELOG.md) for detailed changes." >> $GITHUB_OUTPUT
+            echo "" >> $GITHUB_OUTPUT
+            echo "## Downloads" >> $GITHUB_OUTPUT
+            echo "" >> $GITHUB_OUTPUT
+            echo "Download the appropriate archive for your platform:" >> $GITHUB_OUTPUT
+            echo "- \`subway_surf_rs-linux.tar.gz\` - Linux (x86_64)" >> $GITHUB_OUTPUT
+            echo "- \`subway_surf_rs-windows.tar.gz\` - Windows (x86_64)" >> $GITHUB_OUTPUT
+            echo "- \`subway_surf_rs-macos.tar.gz\` - macOS (x86_64)" >> $GITHUB_OUTPUT
+            echo "" >> $GITHUB_OUTPUT
+            echo "Extract the archive and run the \`subway_surf_rs\` executable." >> $GITHUB_OUTPUT
+            echo "EOF" >> $GITHUB_OUTPUT
+          else
+            echo "NOTES<<EOF" >> $GITHUB_OUTPUT
+            echo "## What's Changed" >> $GITHUB_OUTPUT
+            echo "" >> $GITHUB_OUTPUT
+            echo "Release ${{ steps.version.outputs.VERSION }}" >> $GITHUB_OUTPUT
+            echo "" >> $GITHUB_OUTPUT
+            echo "## Downloads" >> $GITHUB_OUTPUT
+            echo "" >> $GITHUB_OUTPUT
+            echo "Download the appropriate archive for your platform:" >> $GITHUB_OUTPUT
+            echo "- \`subway_surf_rs-linux.tar.gz\` - Linux (x86_64)" >> $GITHUB_OUTPUT
+            echo "- \`subway_surf_rs-windows.tar.gz\` - Windows (x86_64)" >> $GITHUB_OUTPUT
+            echo "- \`subway_surf_rs-macos.tar.gz\` - macOS (x86_64)" >> $GITHUB_OUTPUT
+            echo "" >> $GITHUB_OUTPUT
+            echo "Extract the archive and run the \`subway_surf_rs\` executable." >> $GITHUB_OUTPUT
+            echo "EOF" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: release-assets/*
+          body: ${{ steps.release_notes.outputs.NOTES }}
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
