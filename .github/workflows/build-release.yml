@@ -88,6 +88,7 @@ jobs:
 
       - name: Prepare artifacts (Windows)
         if: matrix.os == 'windows-latest'
+        shell: cmd
         run: |
           mkdir artifacts
           copy target\${{ matrix.target }}\release\${{ matrix.binary_name }} artifacts\
