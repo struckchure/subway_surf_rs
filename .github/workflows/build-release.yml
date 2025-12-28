@@ -90,9 +90,9 @@ jobs:
         run: |
           mkdir artifacts
           copy target\${{ matrix.target }}\release\${{ matrix.binary_name }} artifacts\
-          if exist assets xcopy /E /I assets artifacts\assets
-          if exist LICENSE copy LICENSE artifacts\
-          if exist README.md copy README.md artifacts\
+          if exist assets ( xcopy /E /I assets artifacts\assets )
+          if exist LICENSE ( copy LICENSE artifacts\ )
+          if exist README.md ( copy README.md artifacts\ )
           cd artifacts
           tar -czf ../${{ matrix.artifact_name }}.tar.gz *
           cd ..
