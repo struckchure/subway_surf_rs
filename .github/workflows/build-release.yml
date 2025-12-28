@@ -124,14 +124,8 @@ jobs:
       - name: Prepare release assets
         run: |
           mkdir -p release-assets
-          # Copy compressed archives
+          # Copy compressed archives only
           find artifacts -name "*.tar.gz" -exec cp {} release-assets/ \;
-          # Extract archives to make individual files available
-          for archive in release-assets/*.tar.gz; do
-            platform=$(basename "$archive" .tar.gz)
-            mkdir -p "release-assets/$platform"
-            tar -xzf "$archive" -C "release-assets/$platform"
-          done
 
       - name: Extract version from tag
         id: version
