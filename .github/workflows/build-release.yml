@@ -94,7 +94,7 @@ jobs:
           if exist LICENSE copy LICENSE artifacts\
           if exist README.md copy README.md artifacts\
           cd artifacts
-          tar -czf ..\${{ matrix.artifact_name }}.tar.gz *
+          tar -czf ../${{ matrix.artifact_name }}.tar.gz *
           cd ..
 
       - name: Upload artifacts
@@ -119,14 +119,10 @@ jobs:
         with:
           path: artifacts
 
-      - name: Display structure of downloaded files
-        run: ls -R artifacts
-
       - name: Prepare release assets
         run: |
           mkdir -p release-assets
           find artifacts -name "*.tar.gz" -exec cp {} release-assets/ \;
-          ls -lh release-assets
 
       - name: Extract version from tag
         id: version
