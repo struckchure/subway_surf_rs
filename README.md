@@ -91,6 +91,24 @@ The project uses optimized build profiles for better performance:
 - **Release Profile**: Full optimization with LTO for production builds
 - **WASM Release Profile**: Size-optimized builds for web deployment
 
+## Releases
+
+Releases are automatically created when a new version tag is pushed to the repository. Each release includes pre-built executables for Linux, Windows, and macOS platforms.
+
+### Creating a Release
+
+1. Update the `CHANGELOG.md` file with changes for the new version
+2. Create and push a version tag:
+   ```bash
+   git tag v0.1.0
+   git push origin v0.1.0
+   ```
+3. The GitHub Actions workflow will automatically build and create a release with downloadable executables
+
+### Downloading Pre-built Binaries
+
+Visit the [Releases](https://github.com/struckchure/subway_surf_rs/releases) page to download pre-built binaries for your platform.
+
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
